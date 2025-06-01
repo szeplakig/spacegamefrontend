@@ -4,15 +4,30 @@ import React from "react";
 import "./EntityItem.css";
 import { ResourceComponentData } from "../types/index";
 
-interface ResourceComponentProps {
-  component: ResourceComponentData;
+interface ResourceSlotUsage {
+  energy: number;
+  minerals: number;
+  alloys: number;
+  antimatter: number;
+  research: number;
+  authority: number;
 }
 
-const ResourceComponent: React.FC<ResourceComponentProps> = ({ component }) => {
+interface ResourceComponentProps {
+  component: ResourceComponentData;
+  resourceSlotUsage: ResourceSlotUsage;
+}
+
+const ResourceComponent: React.FC<ResourceComponentProps> = ({
+  component,
+  resourceSlotUsage,
+}) => {
   return (
     <span>
       <b>{component.title}: </b>
-      {component.value}
+      {
+        resourceSlotUsage[component.resource_type as keyof ResourceSlotUsage]
+      } / {component.value}
     </span>
   );
 };

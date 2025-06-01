@@ -2,33 +2,31 @@
 
 // Define an Entity that contains components
 export interface Entity {
-  category: string;
   title: string;
   entity_id: string;
+  entity_slot_categories: string[];
   components: ComponentData[];
 }
 
 // ResourceComponentData for resources like minerals, energy, etc.
 export type ResourceComponentData = {
-  type: "resource";  // Literal type "resource"
-  category: string;
+  type: "resource"; // Literal type "resource"
   title: string;
   value: number;
+  resource_type: string;
 };
 
 // StructureComponentData for structures (like buildings or facilities)
-export type StructuresComponentData = {
-  type: "structures";  // Literal type "structures"
-  category: string;
+export type StructureSlotComponentData = {
+  type: "structure_slot"; // Literal type "structures"
   title: string;
-  structure_type: string;
   structure_slots: number;
+  allowed_structure_types: string[];
 };
 
 // EntitiesComponentData for nested entities
 export type EntitiesComponentData = {
-  type: "entities";  // Literal type "entities"
-  category: string;
+  type: "entities"; // Literal type "entities"
   title: string;
   entities: Entity[];
 };
@@ -36,15 +34,15 @@ export type EntitiesComponentData = {
 // ComponentData is a union type of all component data types
 export type ComponentData =
   | ResourceComponentData
-  | StructuresComponentData
+  | StructureSlotComponentData
   | EntitiesComponentData;
 
 // ScreenData holds data about the screen (like Solar System)
 export interface ScreenData {
   data: {
-    category: string;
     title: string;
     entity_id: string;
+    entity_slot_categories: string[];
     components: ComponentData[];
   };
 }
@@ -65,9 +63,12 @@ export function isEntitiesComponentData(
   return component.type === "entities";
 }
 
-// Check if the component is StructureComponentData
-export function isStructureComponentData(
+export function isStructureSlotComponentData(
   component: ComponentData
-): component is StructuresComponentData {
-  return component.type === "structures";
+): component is StructureSlotComponentData {
+  return component.type === "structure_slot";
+}
+
+export enum EventType {
+  STRUCTURE_BUILT = "structure_built",
 }

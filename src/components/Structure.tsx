@@ -1,0 +1,47 @@
+export interface ResourceRequirementComponent {
+  type: "resource_requirement";
+  title: string;
+  value: number;
+}
+
+export interface ResearchRequirementComponent {
+  type: "research_requirement";
+  title: string;
+}
+
+export type StructureRequirementComponent =
+  | ResourceRequirementComponent
+  | ResearchRequirementComponent;
+
+export interface ResourceProductionComponent {
+  type: "resource_production";
+  category: string;
+  title: string;
+  resource_type: string;
+  slot_usage: number;
+  value: number;
+  scaling_factor: number;
+}
+
+export type StructureProductionComponent = ResourceProductionComponent;
+
+export interface BuiltStructure {
+  structure_id: string;
+  structure_type: string;
+  title: string;
+  production_components: StructureProductionComponent[];
+  requirement_components: StructureRequirementComponent[];
+  level: number;
+}
+
+export interface StructureTemplate {
+  structure_type: string;
+  title: string;
+  production_components: StructureProductionComponent[];
+  requirement_components: StructureRequirementComponent[];
+}
+
+export interface StructuresData {
+  built_structures: BuiltStructure[];
+  structure_templates: StructureTemplate[];
+}

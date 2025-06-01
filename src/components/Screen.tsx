@@ -3,15 +3,50 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import EntityItem from "./EntityItem";
-import { ScreenData } from "../types";
+import { EventType, ScreenData } from "../types";
 import "./Screen.css";
+import Emitter from "../utils/emitter";
+import { SolarSystem, Star, Planet, Moon, findEntitiesByTitle } from "./Canvas";
 
-const Screen: React.FC = () => {
+interface ScreenProps {
+  isLoggedIn: boolean;
+  buildOnEntity: (x: number, y: number, entityId: string) => void;
+}
+
+const Screen: React.FC<ScreenProps> = ({ isLoggedIn, buildOnEntity }) => {
   const [data, setData] = useState<ScreenData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  const fetchData = async (_x: number, _y: number) => {
+    setLoading(true);
+    if (!isLoggedIn) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const response = await fetch(
+        `http://localhost:8000/v1/systems?x=${_x}&y=${_y}`,
+        {
+          credentials: "include",
+        }
+      );
+      if (!response.ok) {
+        const data: { detail: string } = await response.json();
+        console.error("HTTP error:", JSON.stringify(data));
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data: ScreenData = await response.json();
+      setData(data);
+      setError(null);
+    } catch (error: any) {
+      setError(error.message || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Get current x and y from URL parameters, default to 0
   const x = parseInt(searchParams.get("x") || "0", 10);
@@ -62,32 +97,23 @@ const Screen: React.FC = () => {
   }, [x, y]); // Re-register the event listener when x or y changes
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // use cookies in fetch
-        const response = await fetch(
-          `http://localhost:8000/v1/systems?x=${x}&y=${y}`,
-          {
-            credentials: "include",
-          }
-        );
-        if (!response.ok) {
-          const data: { detail: string } = await response.json();
-          console.error("HTTP error:", JSON.stringify(data));
-          throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const data: ScreenData = await response.json();
-        setData(data);
-        setError(null);
-      } catch (error: any) {
-        setError(error.message || "Unknown error");
-      } finally {
-        setLoading(false);
-      }
+    fetchData(x, y);
+  }, [x, y, isLoggedIn]);
+
+  useEffect(() => {
+    async function handler(payload: {
+      x: number;
+      y: number;
+      entityId: string;
+    }) {
+      await fetchData(payload.x, payload.y);
+    }
+
+    Emitter.on(EventType.STRUCTURE_BUILT, handler);
+    return () => {
+      Emitter.off(EventType.STRUCTURE_BUILT, handler);
     };
-    fetchData();
-  }, [x, y]); // Re-fetch data when x or y changes
+  }, []);
 
   if (error) {
     return <div>Error: {error}</div>;
@@ -97,15 +123,46 @@ const Screen: React.FC = () => {
     return <div>Loading...</div>;
   }
 
+  if (!data) {
+    return <div>Loading...</div>;
+  }
+  // Find the Solar System entity in the data
+  // const solarSystem = data.data.components
+  //   .flatMap((comp) => (comp as any).entities || [])
+  //   .find((entity) => entity.category === "SolarSystem");
+
   return (
     <div className="screen-container">
       <div className="coordinates-display">
         Current Coordinates: ({x}, {y})
       </div>
-      <div className="content">
-        {data && data.data.components && data.data.components.length > 0 && (
-          <EntityItem entity={data.data} />
-        )}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          width: "100vw",
+          height: "100vh",
+        }}
+      >
+        <div
+          className="content"
+          style={{
+            padding: "20px",
+            backgroundColor: "#f0f0f0",
+          }}
+        >
+          {data && data.data.components && data.data.components.length > 0 && (
+            <EntityItem
+              entity={data.data}
+              x={x}
+              y={y}
+              buildOnEntity={buildOnEntity}
+            />
+          )}
+        </div>
+        {/* {solarSystem && (
+          <SolarSystem data={solarSystem} />)
+        } */}
       </div>
     </div>
   );

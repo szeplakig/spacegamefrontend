@@ -12,6 +12,12 @@ const customStyles = {
     bottom: "auto",
     marginRight: "-50%",
     transform: "translate(-50%, -50%)",
+    maxWidth: "1000px",
+    backgroundColor: "#fefefe",
+    padding: "20px",
+    borderRadius: "8px",
+    maxHeight: "90vh",
+    boxShadow: "0 5px 15px rgba(0, 0, 0, 0.3)",
   },
 };
 

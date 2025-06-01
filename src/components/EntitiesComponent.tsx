@@ -6,20 +6,34 @@ import { EntitiesComponentData } from "../types/index";
 import EntityItem from "./EntityItem";
 
 interface EntititesComponentProps {
+  x: number;
+  y: number;
   component: EntitiesComponentData;
+  buildOnEntity: (x: number, y: number, entityId: string) => void;
 }
 
 const EntititesComponent: React.FC<EntititesComponentProps> = ({
   component,
+  x,
+  y,
+  buildOnEntity,
 }) => {
   return (
     <div>
       <span>
-        <b>{component.title}:</b>
+        <b>
+          {component.title} ({component.entities.length}):
+        </b>
       </span>
       <ul className="nested-entities">
         {component.entities.map((subEntity) => (
-          <EntityItem key={subEntity.entity_id} entity={subEntity} />
+          <EntityItem
+            key={subEntity.entity_id}
+            entity={subEntity}
+            x={x}
+            y={y}
+            buildOnEntity={buildOnEntity}
+          />
         ))}
       </ul>
     </div>

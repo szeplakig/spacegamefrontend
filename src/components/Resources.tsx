@@ -1,24 +1,11 @@
 // Resources.tsx
 import React, { useEffect, useState } from "react";
 import Resource from "./Resource";
-import Emitter from "../utils/emitter";
-import { EventType } from "../types";
-
-interface ResourceDescriptor {
-  amount: number;
-  change: number;
-  capacity: number | null;
-  updated_at: string | null;
-}
-
-interface ResourcesData {
-  energy: ResourceDescriptor;
-  minerals: ResourceDescriptor;
-  alloys: ResourceDescriptor;
-  antimatter: ResourceDescriptor;
-  research: ResourceDescriptor;
-  authority: ResourceDescriptor;
-}
+import {
+  useResourcesStore,
+  ResourceDescriptor,
+  ResourcesData,
+} from "../store/resourcesStore";
 
 function calculateCurrentResourceValue(resource: ResourceDescriptor): number {
   if (!resource.updated_at) {
@@ -46,85 +33,58 @@ const defaultResourcesData: ResourcesData = {
 };
 
 const Resources: React.FC = () => {
-  const [data, setData] = useState<ResourcesData>(defaultResourcesData);
-  const [displayData, setDisplayData] =
-    useState<ResourcesData>(defaultResourcesData);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = async () => {
-    try {
-      const response = await fetch(`http://localhost:8000/v1/resources`, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        const data: { detail: string } = await response.json();
-        console.error("HTTP error:", JSON.stringify(data));
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const data: ResourcesData = await response.json();
-      setData(data);
-      setError(null);
-    } catch (error: any) {
-      setError(error.message || "Unknown error");
-    }
-  };
+  const resourcesState = useResourcesStore();
+  const [displayData, setDisplayData] = useState<ResourcesData>(defaultResourcesData);
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    async function handler(payload: {
-      x: number;
-      y: number;
-      entityId: string;
-    }) {
-      await fetchData();
-    }
-
-    Emitter.on(EventType.STRUCTURE_BUILT, handler);
-    return () => {
-      Emitter.off(EventType.STRUCTURE_BUILT, handler);
-    };
+    resourcesState.updateResources();
   }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setDisplayData({
-        ...data,
+        ...resourcesState.resourcesData,
         energy: {
-          ...data.energy,
-          amount: calculateCurrentResourceValue(data.energy),
+          ...resourcesState.resourcesData.energy,
+          amount: calculateCurrentResourceValue(
+            resourcesState.resourcesData.energy
+          ),
         },
         minerals: {
-          ...data.minerals,
-          amount: calculateCurrentResourceValue(data.minerals),
+          ...resourcesState.resourcesData.minerals,
+          amount: calculateCurrentResourceValue(
+            resourcesState.resourcesData.minerals
+          ),
         },
         alloys: {
-          ...data.alloys,
-          amount: calculateCurrentResourceValue(data.alloys),
+          ...resourcesState.resourcesData.alloys,
+          amount: calculateCurrentResourceValue(
+            resourcesState.resourcesData.alloys
+          ),
         },
         antimatter: {
-          ...data.antimatter,
-          amount: calculateCurrentResourceValue(data.antimatter),
+          ...resourcesState.resourcesData.antimatter,
+          amount: calculateCurrentResourceValue(
+            resourcesState.resourcesData.antimatter
+          ),
         },
         research: {
-          ...data.research,
-          amount: calculateCurrentResourceValue(data.research),
+          ...resourcesState.resourcesData.research,
+          amount: calculateCurrentResourceValue(
+            resourcesState.resourcesData.research
+          ),
         },
         authority: {
-          ...data.authority,
-          amount: calculateCurrentResourceValue(data.authority),
+          ...resourcesState.resourcesData.authority,
+          amount: calculateCurrentResourceValue(
+            resourcesState.resourcesData.authority
+          ),
         },
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [data]);
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+  }, [resourcesState]);
 
   return (
     <div
@@ -147,7 +107,9 @@ const Resources: React.FC = () => {
             amount={value.amount}
             change={value.change}
             capacity={value.capacity}
-            number_of_resources={Object.keys(displayData).length}
+            number_of_resources={
+              Object.keys(displayData).filter((k) => k != "updated_at").length
+            }
           />
         ))}
     </div>

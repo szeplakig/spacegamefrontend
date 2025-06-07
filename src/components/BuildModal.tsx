@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
 import "./BuildModal.css"; // Import the CSS file
 import { StructuresData } from "./Structure";
-import Emitter from "../utils/emitter";
-import { EventType } from "../types/index";
+import { useResourcesStore } from "../store/resourcesStore";
+import useBuildStore from "../store/buildStore";
 
 const customStyles = {
   content: {
@@ -26,18 +26,11 @@ const customStyles = {
 interface BuildModalProps {
   isOpen: boolean;
   onClose: () => void;
-  x: number;
-  y: number;
-  entityId: string;
 }
 
-const BuildModal: React.FC<BuildModalProps> = ({
-  isOpen,
-  onClose,
-  x,
-  y,
-  entityId,
-}) => {
+const BuildModal: React.FC<BuildModalProps> = ({ isOpen, onClose }) => {
+  const buildStore = useBuildStore();
+  const resourcesState = useResourcesStore();
   const [structuresData, setStructuresData] = useState<StructuresData | null>(
     null
   );
@@ -48,7 +41,7 @@ const BuildModal: React.FC<BuildModalProps> = ({
     if (isOpen) {
       setLoading(true);
       fetch(
-        `http://localhost:8000/v1/entity/${entityId}/structures?x=${x}&y=${y}`,
+        `http://localhost:8000/v1/entity/${buildStore.entityId}/structures?x=${buildStore.x}&y=${buildStore.y}`,
         {
           credentials: "include",
         }
@@ -61,15 +54,16 @@ const BuildModal: React.FC<BuildModalProps> = ({
         })
         .then((data) => {
           setStructuresData(data);
+          console.log("Fetched structures data:", data);
         })
         .catch((error) => setError(error.message))
         .finally(() => setLoading(false));
     }
-  }, [isOpen, entityId, x, y]);
+  }, [isOpen, buildStore]);
 
   const handleBuild = (structure_type: string) => {
     fetch(
-      `http://localhost:8000/v1/entity/${entityId}/structures/${structure_type}?x=${x}&y=${y}`,
+      `http://localhost:8000/v1/entity/${buildStore.entityId}/structures/${structure_type}?x=${buildStore.x}&y=${buildStore.y}`,
       {
         method: "POST",
         credentials: "include",
@@ -81,12 +75,13 @@ const BuildModal: React.FC<BuildModalProps> = ({
             throw new Error("Failed to build: " + res.detail);
           });
         }
+        resourcesState.updateResources();
         return response.json();
       })
       .then(() => {
         // Refetch data after building
         return fetch(
-          `http://localhost:8000/v1/entity/${entityId}/structures?x=${x}&y=${y}`,
+          `http://localhost:8000/v1/entity/${buildStore.entityId}/structures?x=${buildStore.x}&y=${buildStore.y}`,
           {
             credentials: "include",
           }
@@ -100,14 +95,13 @@ const BuildModal: React.FC<BuildModalProps> = ({
       })
       .then((data) => {
         setStructuresData(data);
-        Emitter.emit(EventType.STRUCTURE_BUILT, { x, y, entityId });
       })
       .catch((error) => setError(error.message));
   };
 
   const handleUpgrade = (structure_id: string) => {
     fetch(
-      `http://localhost:8000/v1/entity/${entityId}/structures/${structure_id}?x=${x}&y=${y}`,
+      `http://localhost:8000/v1/entity/${buildStore.entityId}/structures/${structure_id}?x=${buildStore.x}&y=${buildStore.y}`,
       {
         method: "PUT",
         credentials: "include",
@@ -124,7 +118,7 @@ const BuildModal: React.FC<BuildModalProps> = ({
       .then(() => {
         // Refetch data after building
         return fetch(
-          `http://localhost:8000/v1/entity/${entityId}/structures?x=${x}&y=${y}`,
+          `http://localhost:8000/v1/entity/${buildStore.entityId}/structures?x=${buildStore.x}&y=${buildStore.y}`,
           {
             credentials: "include",
           }
@@ -138,7 +132,6 @@ const BuildModal: React.FC<BuildModalProps> = ({
       })
       .then((data) => {
         setStructuresData(data);
-        Emitter.emit(EventType.STRUCTURE_BUILT, { x, y, entityId });
       })
       .catch((error) => setError(error.message));
   };
@@ -157,7 +150,7 @@ const BuildModal: React.FC<BuildModalProps> = ({
       .then(() => {
         // Refetch data after building
         return fetch(
-          `http://localhost:8000/v1/entity/${entityId}/structures?x=${x}&y=${y}`,
+          `http://localhost:8000/v1/entity/${buildStore.entityId}/structures?x=${buildStore.x}&y=${buildStore.y}`,
           {
             credentials: "include",
           }
@@ -171,7 +164,6 @@ const BuildModal: React.FC<BuildModalProps> = ({
       })
       .then((data) => {
         setStructuresData(data);
-        Emitter.emit(EventType.STRUCTURE_BUILT, { x, y, entityId });
       })
       .catch((error) => setError(error.message))
       .finally(() => setLoading(false));
@@ -188,7 +180,9 @@ const BuildModal: React.FC<BuildModalProps> = ({
       <button onClick={onClose} className="close-button">
         &times;
       </button>
-      <h2 className="modal-title">Build Structures</h2>
+      <h2 className="modal-title">
+        Build Structures on ({buildStore.x}, {buildStore.y})
+      </h2>
       {loading && <p className="loading">Loading...</p>}
       {error && <p className="error">{error}</p>}
       {structuresData && (
@@ -218,14 +212,15 @@ const BuildModal: React.FC<BuildModalProps> = ({
                     {structure.requirement_components.length > 0 && [
                       <p className="components-title">Upgrade Requirements:</p>,
                       <ul className="components-list">
-                        {structure.requirement_components.map((component, index) =>
-                          "resource_requirement" === component.type ? (
-                            <li key={index}>
-                              {component.title}: {component.value}
-                            </li>
-                          ) : (
-                            <li key={index}>{component.title}</li>
-                          )
+                        {structure.requirement_components.map(
+                          (component, index) =>
+                            "resource_requirement" === component.type ? (
+                              <li key={index}>
+                                {component.title}: {component.value}
+                              </li>
+                            ) : (
+                              <li key={index}>{component.title}</li>
+                            )
                         )}
                       </ul>,
                     ]}

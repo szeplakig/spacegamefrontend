@@ -3,10 +3,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import EntityItem from "./EntityItem";
-import { EventType, ScreenData } from "../types";
+import { ScreenData } from "../types";
 import "./Screen.css";
-import Emitter from "../utils/emitter";
-import { SolarSystem, Star, Planet, Moon, findEntitiesByTitle } from "./Canvas";
+import useEntityStore from "../store/entityStore";
 
 interface ScreenProps {
   isLoggedIn: boolean;
@@ -14,6 +13,7 @@ interface ScreenProps {
 }
 
 const Screen: React.FC<ScreenProps> = ({ isLoggedIn, buildOnEntity }) => {
+  const entityStore = useEntityStore();
   const [data, setData] = useState<ScreenData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -108,11 +108,6 @@ const Screen: React.FC<ScreenProps> = ({ isLoggedIn, buildOnEntity }) => {
     }) {
       await fetchData(payload.x, payload.y);
     }
-
-    Emitter.on(EventType.STRUCTURE_BUILT, handler);
-    return () => {
-      Emitter.off(EventType.STRUCTURE_BUILT, handler);
-    };
   }, []);
 
   if (error) {
@@ -120,12 +115,20 @@ const Screen: React.FC<ScreenProps> = ({ isLoggedIn, buildOnEntity }) => {
   }
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div
+        style={{
+          display: "relative",
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: "#f0f0f0",
+          textAlign: "center",
+          zIndex: 1000,
+        }}
+      ></div>
+    );
   }
 
-  if (!data) {
-    return <div>Loading...</div>;
-  }
   // Find the Solar System entity in the data
   // const solarSystem = data.data.components
   //   .flatMap((comp) => (comp as any).entities || [])

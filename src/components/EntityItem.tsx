@@ -10,14 +10,18 @@ import {
 } from "../types";
 import ResourceComponent from "./ResourceComponent";
 import EntititesComponent from "./EntitiesComponent";
-import { StructuresData } from "./Structure";
+import { BuiltStructure, StructuresData } from "./Structure";
 import StructureSlotComponent from "./StructureSlotComponent";
 
 interface EntityItemProps {
   entity: Entity;
   x: number;
   y: number;
-  buildOnEntity: (x: number, y: number, entityId: string) => void;
+  buildOnEntity: (
+    x: number,
+    y: number,
+    entityId: string,
+  ) => void;
 }
 
 interface ResourceSlotUsage {
@@ -51,62 +55,77 @@ const EntityItem: React.FC<EntityItemProps> = ({
     }
   );
   const [structureTypes, setStructureTypes] = useState<{
-    [key: string]: number;
+    [key: string]: BuiltStructure[];
   }>({});
 
   useEffect(() => {
-    function fetchData() {
-      fetch(
+    function set(responseData: StructuresData) {
+      setStructuresData(responseData);
+
+      const nextResourceSlotUsage = {
+        energy: 0,
+        minerals: 0,
+        alloys: 0,
+        antimatter: 0,
+        research: 0,
+        authority: 0,
+      };
+      setResourceSlotUsage(nextResourceSlotUsage);
+
+      const nextStructureTypes: { [key: string]: BuiltStructure[] } = {};
+      for (const structure of (responseData as StructuresData)
+        .built_structures) {
+        if (!nextStructureTypes[structure.structure_type]) {
+          nextStructureTypes[structure.structure_type] = [];
+        }
+        nextStructureTypes[structure.structure_type].push(structure);
+        for (const component of structure.production_components) {
+          if (component.type === "resource_production") {
+            nextResourceSlotUsage[
+              component.resource_type as keyof ResourceSlotUsage
+            ] += component.slot_usage;
+          }
+        }
+      }
+      setStructureTypes(nextStructureTypes);
+    }
+
+    async function fetchData() {
+      if (!entity || !entity.entity_id) {
+        return;
+      }
+      const previousStructuresData = localStorage.getItem(
+        `structures_data_${entity.entity_id}`
+      );
+      if (previousStructuresData) {
+        const cachedData: StructuresData = JSON.parse(previousStructuresData);
+        set(cachedData);
+      }
+      const response = await fetch(
         `http://localhost:8000/v1/entity/${entity.entity_id}/structures?x=${x}&y=${y}`,
         {
           credentials: "include",
         }
-      )
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Failed to fetch data");
-          }
-          return response.json();
-        })
-        .then((data) => {
-          setStructuresData(data);
-
-          const nextResourceSlotUsage = {
-            energy: 0,
-            minerals: 0,
-            alloys: 0,
-            antimatter: 0,
-            research: 0,
-            authority: 0,
-          };
-          setResourceSlotUsage(nextResourceSlotUsage);
-
-          const nextStructureTypes: { [key: string]: number } = {};
-          for (const structure of (data as StructuresData).built_structures) {
-            if (!nextStructureTypes[structure.structure_type]) {
-              nextStructureTypes[structure.structure_type] = 0;
-            }
-            nextStructureTypes[structure.structure_type] += 1;
-            for (const component of structure.production_components) {
-              if (component.type === "resource_production") {
-                nextResourceSlotUsage[
-                  component.resource_type as keyof ResourceSlotUsage
-                ] += component.slot_usage;
-              }
-            }
-          }
-          setStructureTypes(nextStructureTypes);
-        })
-        .catch((error) => {});
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch data");
+      }
+      const responseData = await response.json();
+      localStorage.setItem(
+        `structures_data_${entity.entity_id}`,
+        JSON.stringify(responseData)
+      );
+      set(responseData);
     }
 
     if (currentFetchTimeout) {
       clearTimeout(currentFetchTimeout);
     }
+    fetchData();
     setCurrentFetchTimeout(
       setTimeout(() => {
         fetchData();
-      }, 500)
+      }, Math.random() * 250 + 350)
     );
     return () => {
       if (currentFetchTimeout) {
@@ -154,25 +173,24 @@ const EntityItem: React.FC<EntityItemProps> = ({
         className="entity-title"
         style={{
           display: "inline-block",
+          fontWeight: "bold",
+          fontSize: "1.2rem",
+          marginBottom: "10px",
         }}
       >
         {entity.title}
       </p>
-      <p
-        style={{
-          display: "inline-block",
-          marginLeft: "10px",
-        }}
-      >
-        (ID: {entity.entity_id})
-      </p>
       {structuresData &&
-        (
-          structuresData.structure_templates.length > 0 ||
-          structuresData.structure_templates.length > 0
-        ) && (
+        (structuresData.structure_templates.length > 0 ||
+          structuresData.built_structures.length > 0) && (
           <button
-            onClick={() => buildOnEntity(x, y, entity.entity_id)}
+            onClick={() =>
+              buildOnEntity(
+                x,
+                y,
+                entity.entity_id,
+              )
+            }
             style={{
               display: "inline-block",
               float: "right",

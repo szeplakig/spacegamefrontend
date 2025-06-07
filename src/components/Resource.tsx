@@ -19,7 +19,12 @@ const Resource: React.FC<ResourceData> = ({
 }) => {
   const formattedAmount = formatNumber(amount);
   const formattedCapacity = capacity !== null ? formatNumber(capacity) : "∞";
-  const formattedChange = `${change >= 0 ? "+" : "-"}${formatNumber(change)}`;
+  const formattedChange =
+    change > 0
+      ? `+${formatNumber(change)}`
+      : change == 0
+      ? "-"
+      : formatNumber(change);
 
   const tooltipId = `tooltip-${title}`;
 

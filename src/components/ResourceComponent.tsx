@@ -23,12 +23,12 @@ const ResourceComponent: React.FC<ResourceComponentProps> = ({
   resourceSlotUsage,
 }) => {
   return (
-    <span>
+    <div style={{ marginBottom: "10px" }}>
       <b>{component.title}: </b>
       {
         resourceSlotUsage[component.resource_type as keyof ResourceSlotUsage]
       } / {component.value}
-    </span>
+    </div>
   );
 };
 

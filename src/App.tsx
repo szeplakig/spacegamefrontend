@@ -10,6 +10,8 @@ import RegisterModal from "./components/RegisterModal";
 import BuildModal from "./components/BuildModal";
 import Modal from "react-modal";
 import Resources from "./components/Resources";
+import useModalStore from "./store/modalStore";
+import useBuildStore from "./store/buildStore";
 
 const noneModal = 0;
 const loginModal = 1;
@@ -26,46 +28,43 @@ const App: React.FC = () => {
   Modal.setAppElement("#root");
   const setUserId = useUserStore((state) => state.setUserId);
   const userId = useUserStore((state) => state.userId);
-  const [modalState, setModalState] = useState(noneModal);
-  const [buildData, setBuildData] = useState<BuildModalData | null>(null);
+  const modalState = useModalStore();
+  const buildStore = useBuildStore();
 
   function buildOnEntity(x: number, y: number, entityId: string) {
-    setModalState(buildModal);
-    setBuildData({ x, y, entityId });
+    modalState.setModal(buildModal);
+    buildStore.setBuildModal(x, y, entityId);
   }
 
   function renderSelectedModal() {
-    if (modalState === loginModal) {
+    if (modalState.modal === loginModal) {
       return (
         <LoginModal
           isOpen={true}
-          onClose={() => setModalState(noneModal)}
-          onSwitchToRegister={() => setModalState(registerModal)}
+          onClose={() => modalState.setModal(noneModal)}
+          onSwitchToRegister={() => modalState.setModal(registerModal)}
         />
       );
-    } else if (modalState === registerModal) {
+    } else if (modalState.modal === registerModal) {
       return (
         <RegisterModal
           isOpen={true}
-          onClose={() => setModalState(noneModal)}
-          onSwitchToLogin={() => setModalState(loginModal)}
+          onClose={() => modalState.setModal(noneModal)}
+          onSwitchToLogin={() => modalState.setModal(loginModal)}
         />
       );
-    } else if (modalState === buildModal && buildData) {
+    } else if (modalState.modal === buildModal && buildStore.isSet()) {
       return (
         <BuildModal
           isOpen={true}
-          onClose={() => setModalState(noneModal)}
-          x={buildData.x}
-          y={buildData.y}
-          entityId={buildData.entityId}
+          onClose={() => modalState.setModal(noneModal)}
         />
       );
     }
   }
 
   useEffect(() => {
-    if (modalState !== noneModal) {
+    if (modalState.modal !== noneModal) {
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
@@ -86,17 +85,17 @@ const App: React.FC = () => {
         // Check if token is still valid
         if (Date.now() >= exp * 1000) {
           console.error("Token expired, showing login modal");
-          setModalState(loginModal);
+          modalState.setModal(loginModal);
         } else {
           setUserId(user_id); // Set user ID if token is valid
         }
       } catch (error) {
         console.error("Invalid token, showing login modal");
-        setModalState(loginModal);
+        modalState.setModal(loginModal);
       }
     } else {
       console.info("No token, showing login modal");
-      setModalState(loginModal);
+      modalState.setModal(loginModal);
     }
   }, [setUserId]);
 
@@ -133,7 +132,7 @@ const App: React.FC = () => {
                   style={{ marginLeft: "10px" }}
                   onClick={() => {
                     setUserId(null);
-                    setModalState(loginModal);
+                    modalState.setModal(loginModal);
                     document.cookie = "";
                   }}
                 >
@@ -156,7 +155,7 @@ const App: React.FC = () => {
         />
       </Routes>
 
-      {modalState !== noneModal && renderSelectedModal()}
+      {modalState.modal !== noneModal && renderSelectedModal()}
     </>
   );
 };

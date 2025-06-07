@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
-import { Stage, Layer, Circle, Group, Text } from "react-konva";
+import { useEffect, useState, useRef } from "react";
+import { Stage, Layer, Circle, Group } from "react-konva";
 
 const SolarSystem = ({ data }: { data: any }) => {
   const [time, setTime] = useState(Date.now());
@@ -20,7 +20,6 @@ const SolarSystem = ({ data }: { data: any }) => {
     };
   }, []);
 
-
   const [canvasSize, setCanvasSize] = useState({
     width: window.innerWidth * 0.5,
     height: window.innerHeight,
@@ -31,9 +30,9 @@ const SolarSystem = ({ data }: { data: any }) => {
       setCanvasSize({
         width: window.innerWidth * 0.5,
         height: window.innerHeight,
-          });
+      });
     };
-    
+
     window.addEventListener("resize", handleResize);
     return () => window?.removeEventListener("resize", handleResize);
   }, []);
@@ -52,30 +51,36 @@ const SolarSystem = ({ data }: { data: any }) => {
     "Secondary Entities"
   );
 
-  const maxMoonRadius = Math.max(
-    ...secondaryEntities.map((planet) =>
-      (findEntitiesByTitle(planet.components, "Moons").length + 1) * 15 + 5
-    )
-  ) * 2.25;
-  const maxRadius = Math.max(
-    ...secondaryEntities.map((planet, index) => 150 + index * 50)
-  ) * 2.25 + maxMoonRadius;
+  const maxMoonRadius =
+    Math.max(
+      ...secondaryEntities.map(
+        (planet) =>
+          (findEntitiesByTitle(planet.components, "Moons").length + 1) * 15 + 5
+      )
+    ) * 2.25;
+  const maxRadius =
+    Math.max(...secondaryEntities.map((planet, index) => 150 + index * 50)) *
+      2.25 +
+    maxMoonRadius;
   const minDimension = Math.min(canvasSize.width, canvasSize.height);
 
   const stage = (
-    <Stage width={canvasSize.width} height={canvasSize.height} scale={{
-      x: minDimension / maxRadius,
-      y: minDimension / maxRadius
-    }} offset={
-      {
+    <Stage
+      width={canvasSize.width}
+      height={canvasSize.height}
+      scale={{
+        x: minDimension / maxRadius,
+        y: minDimension / maxRadius,
+      }}
+      offset={{
         x: centerX - maxRadius / 2,
-        y: centerY - maxRadius / 2
-      }
-    }>
+        y: centerY - maxRadius / 2,
+      }}
+    >
       <Layer>
         {/* Render stars */}
         <Circle x={centerX} y={centerY} radius={10} fill="black" />
-        <Circle x={centerX} y={centerY} radius={maxRadius} stroke="black"/>
+        <Circle x={centerX} y={centerY} radius={maxRadius} stroke="black" />
         {primaryEntities.map((star, index) => (
           <Star
             key={star.entity_id}
@@ -142,9 +147,16 @@ const Star = ({
   return (
     <Group>
       {/* Star */}
-      <Circle x={x} y={y} radius={radius} fill={color} stroke={'black'} strokeWidth={radius / 10} />
+      <Circle
+        x={x}
+        y={y}
+        radius={radius}
+        fill={color}
+        stroke={"black"}
+        strokeWidth={radius / 10}
+      />
       {/* add a few perlin noise patterns in the color so it looks better */}
-      
+
       {/* Star label */}
       {/* <Text x={x - radius} y={y - radius - 15} text={data.title} fill="black" /> */}
     </Group>
@@ -202,7 +214,14 @@ const Planet = ({
         dash={[4, 4]}
       />
       {/* Planet */}
-      <Circle x={x} y={y} radius={radius} fill={color}  stroke={'black'} strokeWidth={radius / 10} />
+      <Circle
+        x={x}
+        y={y}
+        radius={radius}
+        fill={color}
+        stroke={"black"}
+        strokeWidth={radius / 10}
+      />
 
       {/* Moons */}
       {moons.map((moon: MoonData, idx: number) => (
@@ -267,7 +286,14 @@ const Moon = ({
         dash={[2, 2]}
       />
       {/* Moon */}
-      <Circle x={x} y={y} radius={radius} fill={color} stroke={'black'} strokeWidth={radius / 10}/>
+      <Circle
+        x={x}
+        y={y}
+        radius={radius}
+        fill={color}
+        stroke={"black"}
+        strokeWidth={radius / 10}
+      />
       {/* Moon label */}
       {/* <Text x={x - radius} y={y - radius - 5} text={data.title} fill="black" /> */}
     </Group>

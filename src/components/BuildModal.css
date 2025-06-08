@@ -43,8 +43,15 @@
 
 .structure-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(30%, 100%), 1fr));
-  gap: 10px;
+  /* This ensures a maximum of 3 columns.
+     - repeat(auto-fit, ...) allows the grid to fit as many columns as possible.
+     - minmax(300px, 1fr) ensures each column is at least 300px wide,
+       or takes up an equal fraction of the available space if there's more space.
+     - You can adjust 300px to your desired minimum card width.
+  */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px; /* Increased gap for better spacing */
+  justify-content: center; /* Center the grid items when there are fewer than 3 */
 }
 
 .structure-card {
@@ -54,8 +61,8 @@
   padding: 10px;
   box-sizing: border-box;
   margin: 10px;
-  display: flex;            /* Added */
-  flex-direction: column;   /* Added */
+  display: flex;
+  flex-direction: column;
 }
 
 .structure-card h4 {
@@ -121,7 +128,13 @@
 }
 
 @media (max-width: 768px) {
-  .structure-card {
-    width: 100%;
+  .structure-list {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .structure-list {
+    grid-template-columns: 1fr;
   }
 }

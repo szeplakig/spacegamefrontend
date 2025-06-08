@@ -4,17 +4,12 @@ import React from "react";
 import "./EntityItem.css";
 import { EntitiesComponentData } from "../types/index";
 import EntityItem from "./EntityItem";
-import { StructuresData } from "./Structure";
 
 interface EntititesComponentProps {
   x: number;
   y: number;
   component: EntitiesComponentData;
-  buildOnEntity: (
-    x: number,
-    y: number,
-    entityId: string,
-  ) => void;
+  buildOnEntity: (x: number, y: number, entityId: string) => void;
 }
 
 const EntititesComponent: React.FC<EntititesComponentProps> = ({

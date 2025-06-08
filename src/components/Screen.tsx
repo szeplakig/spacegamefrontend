@@ -1,6 +1,6 @@
 // src/components/Screen.tsx
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import EntityItem from "./EntityItem";
 import { ScreenData } from "../types";
@@ -14,39 +14,8 @@ interface ScreenProps {
 
 const Screen: React.FC<ScreenProps> = ({ isLoggedIn, buildOnEntity }) => {
   const entityStore = useEntityStore();
-  const [data, setData] = useState<ScreenData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-
-  const fetchData = async (_x: number, _y: number) => {
-    setLoading(true);
-    if (!isLoggedIn) {
-      setLoading(false);
-      return;
-    }
-    try {
-      const response = await fetch(
-        `http://localhost:8000/v1/systems?x=${_x}&y=${_y}`,
-        {
-          credentials: "include",
-        }
-      );
-      if (!response.ok) {
-        const data: { detail: string } = await response.json();
-        console.error("HTTP error:", JSON.stringify(data));
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      const data: ScreenData = await response.json();
-      setData(data);
-      setError(null);
-    } catch (error: any) {
-      setError(error.message || "Unknown error");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Get current x and y from URL parameters, default to 0
   const x = parseInt(searchParams.get("x") || "0", 10);
@@ -97,42 +66,8 @@ const Screen: React.FC<ScreenProps> = ({ isLoggedIn, buildOnEntity }) => {
   }, [x, y]); // Re-register the event listener when x or y changes
 
   useEffect(() => {
-    fetchData(x, y);
+    entityStore.loadEntity(x, y);
   }, [x, y, isLoggedIn]);
-
-  useEffect(() => {
-    async function handler(payload: {
-      x: number;
-      y: number;
-      entityId: string;
-    }) {
-      await fetchData(payload.x, payload.y);
-    }
-  }, []);
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  if (loading) {
-    return (
-      <div
-        style={{
-          display: "relative",
-          width: "100vw",
-          height: "100vh",
-          backgroundColor: "#f0f0f0",
-          textAlign: "center",
-          zIndex: 1000,
-        }}
-      ></div>
-    );
-  }
-
-  // Find the Solar System entity in the data
-  // const solarSystem = data.data.components
-  //   .flatMap((comp) => (comp as any).entities || [])
-  //   .find((entity) => entity.category === "SolarSystem");
 
   return (
     <div className="screen-container">
@@ -154,14 +89,16 @@ const Screen: React.FC<ScreenProps> = ({ isLoggedIn, buildOnEntity }) => {
             backgroundColor: "#f0f0f0",
           }}
         >
-          {data && data.data.components && data.data.components.length > 0 && (
-            <EntityItem
-              entity={data.data}
-              x={x}
-              y={y}
-              buildOnEntity={buildOnEntity}
-            />
-          )}
+          {entityStore.entity &&
+            entityStore.entity.components &&
+            entityStore.entity.components.length > 0 && (
+              <EntityItem
+                entity={entityStore.entity}
+                x={x}
+                y={y}
+                buildOnEntity={buildOnEntity}
+              />
+            )}
         </div>
         {/* {solarSystem && (
           <SolarSystem data={solarSystem} />)

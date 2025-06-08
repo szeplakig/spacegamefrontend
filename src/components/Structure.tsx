@@ -25,23 +25,21 @@ export interface ResourceProductionComponent {
 
 export type StructureProductionComponent = ResourceProductionComponent;
 
-export interface BuiltStructure {
-  structure_id: string;
-  structure_type: string;
-  title: string;
-  production_components: StructureProductionComponent[];
-  requirement_components: StructureRequirementComponent[];
-  level: number;
-}
-
 export interface StructureTemplate {
   structure_type: string;
   title: string;
+  description: string;
   production_components: StructureProductionComponent[];
   requirement_components: StructureRequirementComponent[];
+}
+
+export interface BuiltStructure extends StructureTemplate {
+  structure_id: string;
+  level: number;
 }
 
 export interface StructuresData {
   built_structures: BuiltStructure[];
   structure_templates: StructureTemplate[];
+  other_templates: { [key: string]: string };
 }

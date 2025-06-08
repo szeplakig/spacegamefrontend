@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
 import "./BuildModal.css"; // Import the CSS file
-import { StructuresData } from "./Structure";
 import { useResourcesStore } from "../store/resourcesStore";
 import useBuildStore from "../store/buildStore";
+import useStructureStore from "../store/structureStore";
+import { spawn } from "child_process";
 
 const customStyles = {
   content: {
@@ -21,6 +22,7 @@ const customStyles = {
     maxHeight: "90vh",
     boxShadow: "0 5px 15px rgba(0, 0, 0, 0.3)",
   },
+  overlay: { zIndex: 1000 },
 };
 
 interface BuildModalProps {
@@ -29,35 +31,22 @@ interface BuildModalProps {
 }
 
 const BuildModal: React.FC<BuildModalProps> = ({ isOpen, onClose }) => {
+  const strucutresStore = useStructureStore();
   const buildStore = useBuildStore();
-  const resourcesState = useResourcesStore();
-  const [structuresData, setStructuresData] = useState<StructuresData | null>(
-    null
+  const structures = useStructureStore((state) =>
+    state.getStructures(buildStore.x, buildStore.y, buildStore.entityId)
   );
+  const resourcesState = useResourcesStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setLoading(true);
-      fetch(
-        `http://localhost:8000/v1/entity/${buildStore.entityId}/structures?x=${buildStore.x}&y=${buildStore.y}`,
-        {
-          credentials: "include",
-        }
-      )
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Failed to fetch data");
-          }
-          return response.json();
-        })
-        .then((data) => {
-          setStructuresData(data);
-          console.log("Fetched structures data:", data);
-        })
-        .catch((error) => setError(error.message))
-        .finally(() => setLoading(false));
+      strucutresStore.loadStructures(
+        buildStore.x,
+        buildStore.y,
+        buildStore.entityId
+      );
     }
   }, [isOpen, buildStore]);
 
@@ -75,26 +64,13 @@ const BuildModal: React.FC<BuildModalProps> = ({ isOpen, onClose }) => {
             throw new Error("Failed to build: " + res.detail);
           });
         }
+        strucutresStore.loadStructures(
+          buildStore.x,
+          buildStore.y,
+          buildStore.entityId
+        );
         resourcesState.updateResources();
         return response.json();
-      })
-      .then(() => {
-        // Refetch data after building
-        return fetch(
-          `http://localhost:8000/v1/entity/${buildStore.entityId}/structures?x=${buildStore.x}&y=${buildStore.y}`,
-          {
-            credentials: "include",
-          }
-        );
-      })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch data");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setStructuresData(data);
       })
       .catch((error) => setError(error.message));
   };
@@ -113,25 +89,14 @@ const BuildModal: React.FC<BuildModalProps> = ({ isOpen, onClose }) => {
             throw new Error("Failed to upgrade: " + res.detail);
           });
         }
-        return response.json();
-      })
-      .then(() => {
-        // Refetch data after building
-        return fetch(
-          `http://localhost:8000/v1/entity/${buildStore.entityId}/structures?x=${buildStore.x}&y=${buildStore.y}`,
-          {
-            credentials: "include",
-          }
+
+        strucutresStore.loadStructures(
+          buildStore.x,
+          buildStore.y,
+          buildStore.entityId
         );
-      })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch data");
-        }
+        resourcesState.updateResources();
         return response.json();
-      })
-      .then((data) => {
-        setStructuresData(data);
       })
       .catch((error) => setError(error.message));
   };
@@ -145,25 +110,13 @@ const BuildModal: React.FC<BuildModalProps> = ({ isOpen, onClose }) => {
         if (!response.ok) {
           throw new Error("Failed to destroy");
         }
-        return response.json();
-      })
-      .then(() => {
-        // Refetch data after building
-        return fetch(
-          `http://localhost:8000/v1/entity/${buildStore.entityId}/structures?x=${buildStore.x}&y=${buildStore.y}`,
-          {
-            credentials: "include",
-          }
+        strucutresStore.loadStructures(
+          buildStore.x,
+          buildStore.y,
+          buildStore.entityId
         );
-      })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch data");
-        }
+        resourcesState.updateResources();
         return response.json();
-      })
-      .then((data) => {
-        setStructuresData(data);
       })
       .catch((error) => setError(error.message))
       .finally(() => setLoading(false));
@@ -185,14 +138,16 @@ const BuildModal: React.FC<BuildModalProps> = ({ isOpen, onClose }) => {
       </h2>
       {loading && <p className="loading">Loading...</p>}
       {error && <p className="error">{error}</p>}
-      {structuresData && (
+      {structures && (
         <div className="modal-content">
           <div className="structures-section">
-            {structuresData.built_structures.length > 0 ? (
+            <h3>Built Structures</h3>
+            {structures.built_structures.length > 0 ? (
               <div className="structure-list">
-                {structuresData.built_structures.map((structure) => (
+                {structures.built_structures.map((structure) => (
                   <div className="structure-card" key={structure.structure_id}>
                     <h4>{structure.title}</h4>
+                    <p>{structure.description}</p>
                     {structure.production_components.length > 0 && [
                       <p className="components-title">Production:</p>,
                       <ul className="components-list">
@@ -228,7 +183,6 @@ const BuildModal: React.FC<BuildModalProps> = ({ isOpen, onClose }) => {
                       style={{
                         display: "flex",
                         justifyContent: "right",
-                        // align right
                         width: "100%",
                         gap: "1rem",
                       }}
@@ -256,61 +210,71 @@ const BuildModal: React.FC<BuildModalProps> = ({ isOpen, onClose }) => {
 
           <div className="structures-section">
             <h3>Buildable Structures</h3>
-            {structuresData.structure_templates.length > 0 ? (
+            {structures.structure_templates.length > 0 ? (
               <div className="structure-list">
-                {structuresData.structure_templates.map(
-                  (structure_template) => (
-                    <div
-                      className="structure-card"
-                      key={structure_template.structure_type}
+                {structures.structure_templates.map((structure_template) => (
+                  <div
+                    className="structure-card"
+                    key={structure_template.structure_type}
+                  >
+                    <h4>{structure_template.title}</h4>
+                    <span>{structure_template.description}</span>
+                    {structure_template.production_components.length > 0 && [
+                      <p className="components-title">Production:</p>,
+                      <ul className="components-list">
+                        {structure_template.production_components.map(
+                          (component, index) =>
+                            "resource_production" === component.type ? (
+                              <li key={index}>
+                                {component.title}: {component.value} ( Uses{" "}
+                                {component.slot_usage} slots)
+                              </li>
+                            ) : (
+                              <li key={index}>{component.title}</li>
+                            )
+                        )}
+                      </ul>,
+                    ]}
+                    {structure_template.requirement_components.length > 0 && [
+                      <p className="components-title">Build Requirements:</p>,
+                      <ul className="components-list">
+                        {structure_template.requirement_components.map(
+                          (component, index) =>
+                            "resource_requirement" === component.type ? (
+                              <li key={index}>
+                                {component.title}: {component.value}
+                              </li>
+                            ) : (
+                              <li key={index}>{component.title}</li>
+                            )
+                        )}
+                      </ul>,
+                    ]}
+                    <button
+                      className="build-button"
+                      onClick={() =>
+                        handleBuild(structure_template.structure_type)
+                      }
                     >
-                      <h4>{structure_template.title}</h4>
-                      {structure_template.production_components.length > 0 && [
-                        <p className="components-title">Production:</p>,
-                        <ul className="components-list">
-                          {structure_template.production_components.map(
-                            (component, index) =>
-                              "resource_production" === component.type ? (
-                                <li key={index}>
-                                  {component.title}: {component.value} ( Uses{" "}
-                                  {component.slot_usage} slots)
-                                </li>
-                              ) : (
-                                <li key={index}>{component.title}</li>
-                              )
-                          )}
-                        </ul>,
-                      ]}
-                      {structure_template.requirement_components.length > 0 && [
-                        <p className="components-title">Build Requirements:</p>,
-                        <ul className="components-list">
-                          {structure_template.requirement_components.map(
-                            (component, index) =>
-                              "resource_requirement" === component.type ? (
-                                <li key={index}>
-                                  {component.title}: {component.value}
-                                </li>
-                              ) : (
-                                <li key={index}>{component.title}</li>
-                              )
-                          )}
-                        </ul>,
-                      ]}
-                      <button
-                        className="build-button"
-                        onClick={() =>
-                          handleBuild(structure_template.structure_type)
-                        }
-                      >
-                        Build
-                      </button>
-                    </div>
-                  )
-                )}
+                      Build
+                    </button>
+                  </div>
+                ))}
               </div>
             ) : (
               <p>No buildable structures.</p>
             )}
+          </div>
+
+          <div className="structures-section">
+            {structures &&
+              structures.other_templates &&
+              Object.entries(structures.other_templates).map(([k, v]) => (
+                <span>
+                  {k}: {v}
+                  <br />
+                </span>
+              ))}
           </div>
         </div>
       )}

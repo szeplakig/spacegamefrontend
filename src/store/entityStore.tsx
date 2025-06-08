@@ -9,15 +9,16 @@ interface EntityState {
 const useEntityStore = create<EntityState>((set) => ({
   entity: null,
   loadEntity: (x: number, y: number) => {
+    set({ entity: null });
     fetch(`http://localhost:8000/v1/systems?x=${x}&y=${y}`, {
       credentials: "include",
     })
       .then((response) => {
         return response.json();
       })
-      .then((entity) =>
+      .then((value) =>
         set({
-          entity,
+          entity: value.data,
         })
       );
   },

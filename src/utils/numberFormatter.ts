@@ -6,11 +6,11 @@ export const formatNumber = (value: number): string => {
   if (absValue < 1_000) {
     formattedNumber = absValue.toString();
   } else if (absValue < 1_000_000) {
-    formattedNumber = (absValue / 1_000).toFixed(0) + "K";
+    formattedNumber = (absValue / 1_000).toFixed(1) + "K";
   } else if (absValue < 1_000_000_000) {
-    formattedNumber = (absValue / 1_000_000).toFixed(0) + "M";
+    formattedNumber = (absValue / 1_000_000).toFixed(1) + "M";
   } else if (absValue < 1_000_000_000_000) {
-    formattedNumber = (absValue / 1_000_000_000).toFixed(0) + "B";
+    formattedNumber = (absValue / 1_000_000_000).toFixed(1) + "B";
   } else {
     formattedNumber = absValue.toExponential(2);
   }

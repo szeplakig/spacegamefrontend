@@ -1,8 +1,6 @@
-// src/App.tsx
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
-import { jwtDecode } from "jwt-decode"; // Ensure you use the correct import
+import { jwtDecode } from "jwt-decode";
 import Screen from "./components/Screen";
 import useUserStore from "./store/userStore";
 import LoginModal from "./components/LoginModal";
@@ -12,24 +10,35 @@ import Modal from "react-modal";
 import Resources from "./components/Resources";
 import useModalStore from "./store/modalStore";
 import useBuildStore from "./store/buildStore";
+import ResearchModal from "./components/ResearchModal";
+import { useResourcesStore } from "./store/resourcesStore";
 
+function secondsToDhms(seconds: number) {
+  seconds = Number(seconds);
+  var d = Math.floor(seconds / (3600 * 24));
+  var h = Math.floor((seconds % (3600 * 24)) / 3600);
+  var m = Math.floor((seconds % 3600) / 60);
+  var s = Math.floor(seconds % 60);
+
+  var dDisplay = d > 0 ? d + (d == 1 ? " day, " : " days, ") : "";
+  var hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " hours, ") : "";
+  var mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " minutes, ") : "";
+  var sDisplay = s > 0 ? s + (s == 1 ? " second" : " seconds") : "";
+  return dDisplay + hDisplay + mDisplay + sDisplay;
+}
 const noneModal = 0;
 const loginModal = 1;
 const registerModal = 2;
 const buildModal = 3;
-
-interface BuildModalData {
-  x: number;
-  y: number;
-  entityId: string;
-}
+const researchModal = 4;
 
 const App: React.FC = () => {
   Modal.setAppElement("#root");
-  const setUserId = useUserStore((state) => state.setUserId);
+  const userStore = useUserStore();
   const userId = useUserStore((state) => state.userId);
   const modalState = useModalStore();
   const buildStore = useBuildStore();
+  const resourceStore = useResourcesStore();
 
   function buildOnEntity(x: number, y: number, entityId: string) {
     modalState.setModal(buildModal);
@@ -60,7 +69,15 @@ const App: React.FC = () => {
           onClose={() => modalState.setModal(noneModal)}
         />
       );
+    } else if (modalState.modal === researchModal) {
+      return (
+        <ResearchModal
+          isOpen={true}
+          onClose={() => modalState.setModal(noneModal)}
+        />
+      );
     }
+    return null;
   }
 
   useEffect(() => {
@@ -87,7 +104,7 @@ const App: React.FC = () => {
           console.error("Token expired, showing login modal");
           modalState.setModal(loginModal);
         } else {
-          setUserId(user_id); // Set user ID if token is valid
+          userStore.setUserId(user_id); // Set user ID if token is valid
         }
       } catch (error) {
         console.error("Invalid token, showing login modal");
@@ -97,7 +114,7 @@ const App: React.FC = () => {
       console.info("No token, showing login modal");
       modalState.setModal(loginModal);
     }
-  }, [setUserId]);
+  }, [userId]);
 
   return (
     <>
@@ -119,6 +136,121 @@ const App: React.FC = () => {
           >
             Space Game
           </h1>
+          <button
+            style={{
+              marginLeft: "20px",
+              padding: "0.5rem",
+              textAlign: "center",
+              cursor: "pointer",
+            }}
+            onClick={() => modalState.setModal(researchModal)}
+          >
+            🧪
+          </button>
+          {/* 1 hour time warp button */}
+          <button
+            style={{
+              marginLeft: "20px",
+              padding: "0.5rem",
+              textAlign: "center",
+              cursor: "pointer",
+            }}
+            onClick={() => {
+              const seconds = 3600; // 1 hour in seconds
+              fetch(`http://localhost:8000/v1/time-warp/${seconds}`, {
+                method: "POST",
+                credentials: "include",
+              })
+                .then(() => {
+                  resourceStore.updateResources(); // Update resources after time warp
+                  let timeWarp = parseInt(
+                    localStorage.getItem(`time-warp-${userId}`) ?? "0",
+                    10
+                  );
+                  timeWarp += seconds;
+                  localStorage.setItem(
+                    `time-warp-${userId}`,
+                    timeWarp.toString()
+                  );
+                })
+                .catch((error) => {
+                  console.error("Error during time warp:", error);
+                });
+            }}
+          >
+            1 hour
+          </button>
+          {/* 1 day time warp button */}
+          <button
+            style={{
+              marginLeft: "20px",
+              padding: "0.5rem",
+              textAlign: "center",
+              cursor: "pointer",
+            }}
+            onClick={() => {
+              const seconds = 86400; // 1 day in seconds
+              fetch(`http://localhost:8000/v1/time-warp/${seconds}`, {
+                method: "POST",
+                credentials: "include",
+              })
+                .then(() => {
+                  resourceStore.updateResources(); // Update resources after time warp
+                  let timeWarp = parseInt(
+                    localStorage.getItem(`time-warp-${userId}`) ?? "0",
+                    10
+                  );
+                  timeWarp += seconds;
+                  localStorage.setItem(
+                    `time-warp-${userId}`,
+                    timeWarp.toString()
+                  );
+                })
+                .catch((error) => {
+                  console.error("Error during time warp:", error);
+                });
+            }}
+          >
+            1 day
+          </button>
+          {/* 1 week time warp button */}
+          <button
+            style={{
+              marginLeft: "20px",
+              padding: "0.5rem",
+              textAlign: "center",
+              cursor: "pointer",
+            }}
+            onClick={() => {
+              const seconds = 604800; // 1 week in seconds
+              fetch(`http://localhost:8000/v1/time-warp/${seconds}`, {
+                method: "POST",
+                credentials: "include",
+              })
+                .then(() => {
+                  resourceStore.updateResources(); // Update resources after time warp
+                  let timeWarp = parseInt(
+                    localStorage.getItem(`time-warp-${userId}`) ?? "0",
+                    10
+                  );
+                  timeWarp += seconds;
+                  localStorage.setItem(
+                    `time-warp-${userId}`,
+                    timeWarp.toString()
+                  );
+                })
+                .catch((error) => {
+                  console.error("Error during time warp:", error);
+                });
+            }}
+          >
+            1 week
+          </button>
+          <span>
+            {secondsToDhms(
+              parseInt(localStorage.getItem(`time-warp-${userId}`) ?? "0")
+            )}
+          </span>
           <div
             style={{
               display: "inline-block",
@@ -131,7 +263,7 @@ const App: React.FC = () => {
                 <button
                   style={{ marginLeft: "10px" }}
                   onClick={() => {
-                    setUserId(null);
+                    userStore.setUserId(null);
                     modalState.setModal(loginModal);
                     document.cookie = "";
                   }}

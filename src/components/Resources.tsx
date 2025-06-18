@@ -20,7 +20,10 @@ function calculateCurrentResourceValue(resource: ResourceDescriptor): number {
     resource.amount + resource.change * hours_passed
   );
 
-  return Math.min(current_amount, resource.capacity || Infinity);
+  return Math.min(
+    current_amount,
+    resource.capacity !== null ? resource.capacity : Infinity
+  );
 }
 
 const defaultResourcesData: ResourcesData = {
@@ -34,7 +37,8 @@ const defaultResourcesData: ResourcesData = {
 
 const Resources: React.FC = () => {
   const resourcesState = useResourcesStore();
-  const [displayData, setDisplayData] = useState<ResourcesData>(defaultResourcesData);
+  const [displayData, setDisplayData] =
+    useState<ResourcesData>(defaultResourcesData);
 
   useEffect(() => {
     resourcesState.updateResources();
@@ -108,7 +112,7 @@ const Resources: React.FC = () => {
             change={value.change}
             capacity={value.capacity}
             number_of_resources={
-              Object.keys(displayData).filter((k) => k != "updated_at").length
+              Object.keys(displayData).filter((k) => k !== "updated_at").length
             }
           />
         ))}

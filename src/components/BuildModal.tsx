@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
-import "./BuildModal.css"; // Import the CSS file
+import "./BuildModal.css";
 import { useResourcesStore } from "../store/resourcesStore";
 import useBuildStore from "../store/buildStore";
 import useStructureStore from "../store/structureStore";
-import { spawn } from "child_process";
 
 const customStyles = {
   content: {
@@ -69,6 +68,7 @@ const BuildModal: React.FC<BuildModalProps> = ({ isOpen, onClose }) => {
           buildStore.y,
           buildStore.entityId
         );
+        strucutresStore.reloadEntityStructures(buildStore.entityId);
         resourcesState.updateResources();
         return response.json();
       })
@@ -95,6 +95,7 @@ const BuildModal: React.FC<BuildModalProps> = ({ isOpen, onClose }) => {
           buildStore.y,
           buildStore.entityId
         );
+        strucutresStore.reloadEntityStructures(buildStore.entityId);
         resourcesState.updateResources();
         return response.json();
       })
@@ -185,6 +186,9 @@ const BuildModal: React.FC<BuildModalProps> = ({ isOpen, onClose }) => {
                         justifyContent: "right",
                         width: "100%",
                         gap: "1rem",
+                        position: "absolute",
+                        bottom: "1rem",
+                        right: "1.5rem",
                       }}
                     >
                       <button
@@ -267,14 +271,22 @@ const BuildModal: React.FC<BuildModalProps> = ({ isOpen, onClose }) => {
           </div>
 
           <div className="structures-section">
-            {structures &&
-              structures.other_templates &&
-              Object.entries(structures.other_templates).map(([k, v]) => (
-                <span>
-                  {k}: {v}
-                  <br />
-                </span>
-              ))}
+            <h3>Debug: Unbuildable structures</h3>
+            <ul>
+              {structures &&
+                structures.other_templates &&
+                Object.entries(structures.other_templates).map(([k, v]) => (
+                  <li
+                    style={{
+                      listStyle: "initial",
+                      marginLeft: "30px",
+                    }}
+                  >
+                    {k}: {v}
+                    <br />
+                  </li>
+                ))}
+            </ul>
           </div>
         </div>
       )}

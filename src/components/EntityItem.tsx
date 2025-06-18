@@ -98,7 +98,7 @@ const EntityItem: React.FC<EntityItemProps> = ({
     }
     setResourceSlotUsage(nextResourceSlotUsage);
     setStructureTypes(nextStructureTypes);
-  }, [structures]);
+  }, [structures, strucutresStore]);
 
   const renderComponents = (components: Entity["components"]) => {
     return (
@@ -147,26 +147,22 @@ const EntityItem: React.FC<EntityItemProps> = ({
       >
         {entity.title}
       </p>
-      {strucutresStore.getStructures(x, y, entity.entity_id) &&
-        ((strucutresStore.getStructures(x, y, entity.entity_id)
-          ?.structure_templates?.length ?? 0) > 0 ||
-          (strucutresStore.getStructures(x, y, entity.entity_id)
-            ?.built_structures?.length ?? 0) > 0) && (
-          <button
-            onClick={() => buildOnEntity(x, y, entity.entity_id)}
-            style={{
-              display: "inline-block",
-              float: "right",
-              padding: "0.5rem",
-              textAlign: "center",
-              fontWeight: "bold",
-              fontSize: "1.5rem",
-              cursor: "pointer",
-            }}
-          >
-            🛠
-          </button>
-        )}
+      {strucutresStore.getStructures(x, y, entity.entity_id) && (
+        <button
+          onClick={() => buildOnEntity(x, y, entity.entity_id)}
+          style={{
+            display: "inline-block",
+            float: "right",
+            padding: "0.5rem",
+            textAlign: "center",
+            fontWeight: "bold",
+            fontSize: "1.5rem",
+            cursor: "pointer",
+          }}
+        >
+          🛠
+        </button>
+      )}
       {entity.components &&
         entity.components.length > 0 &&
         renderComponents(entity.components)}

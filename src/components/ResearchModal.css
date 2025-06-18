@@ -43,6 +43,12 @@
 
 .structure-list {
   display: grid;
+  /* This ensures a maximum of 3 columns.
+     - repeat(auto-fit, ...) allows the grid to fit as many columns as possible.
+     - minmax(300px, 1fr) ensures each column is at least 300px wide,
+       or takes up an equal fraction of the available space if there's more space.
+     - You can adjust 300px to your desired minimum card width.
+  */
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px; /* Increased gap for better spacing */
   justify-content: center; /* Center the grid items when there are fewer than 3 */

@@ -3,7 +3,6 @@
 import React, { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import EntityItem from "./EntityItem";
-import { ScreenData } from "../types";
 import "./Screen.css";
 import useEntityStore from "../store/entityStore";
 

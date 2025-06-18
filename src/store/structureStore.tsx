@@ -1,11 +1,9 @@
-import {
-  StructuresData,
-} from "../components/Structure";
+import { StructuresData } from "../components/Structure";
 import { create } from "zustand";
 
 interface StructureState {
   structures: {
-    [x: number]: { [y: number]: { [entityId: string]: StructuresData } };
+    [entityId: string]: { [x: number]: { [y: number]: StructuresData } };
   };
   getStructures: (
     x: number | null,
@@ -17,6 +15,7 @@ interface StructureState {
     y: number | null,
     entityId: string | null
   ) => void;
+  reloadEntityStructures: (entityId: string | null) => void;
 }
 
 const useStructureStore = create<StructureState>((set, get) => ({
@@ -29,11 +28,11 @@ const useStructureStore = create<StructureState>((set, get) => ({
     if (x === null || y === null || entityId === null) throw Error();
     const self = get();
     if (
-      self.structures[x] !== undefined &&
-      self.structures[x][y] !== undefined &&
-      self.structures[x][y][entityId] !== undefined
+      self.structures[entityId] !== undefined &&
+      self.structures[entityId][x] !== undefined &&
+      self.structures[entityId][x][y] !== undefined
     ) {
-      return self.structures[x][y][entityId];
+      return self.structures[entityId][x][y];
     }
     return null;
   },
@@ -54,15 +53,29 @@ const useStructureStore = create<StructureState>((set, get) => ({
         return response.json();
       })
       .then((value: StructuresData) => {
-        if (self.structures[x] === undefined) {
-          self.structures[x] = {};
+        if (self.structures[entityId] === undefined) {
+          self.structures[entityId] = {};
         }
-        if (self.structures[x][y] === undefined) {
-          self.structures[x][y] = {};
+        if (self.structures[entityId][x] === undefined) {
+          self.structures[entityId][x] = {};
         }
-        self.structures[x][y][entityId] = value;
+        self.structures[entityId][x][y] = value;
         set({ structures: self.structures });
       });
+  },
+  reloadEntityStructures: (entityId: string | null) => {
+    if (entityId === null) throw Error();
+    const self = get();
+    Object.keys(self.structures[entityId]).forEach((xStr) => {
+      const x = parseInt(xStr, 10);
+      const yCoords = self.structures[entityId][x];
+      if (yCoords) {
+        Object.keys(yCoords).forEach((yStr) => {
+          const y = parseInt(yStr, 10);
+          self.loadStructures(x, y, entityId);
+        });
+      }
+    });
   },
 }));
 

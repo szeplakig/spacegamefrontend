@@ -31,11 +31,18 @@ export type EntitiesComponentData = {
   entities: Entity[];
 };
 
+export type FeaturesComponentData = {
+  type: "features"; // Literal type "features"
+  title: string;
+  components: ComponentData[];
+};
+
 // ComponentData is a union type of all component data types
 export type ComponentData =
   | ResourceComponentData
   | StructureSlotComponentData
-  | EntitiesComponentData;
+  | EntitiesComponentData
+  | FeaturesComponentData;
 
 // ScreenData holds data about the screen (like Solar System)
 export interface ScreenData {

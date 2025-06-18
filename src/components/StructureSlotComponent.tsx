@@ -13,7 +13,7 @@ const StructureSlotComponent: React.FC<StructureSlotComponentProps> = ({
   component,
   structureTypes,
 }) => {
-  const structures = new Array();
+  const structures = [];
   for (const [type, _structures] of Object.entries(structureTypes)) {
     if (component.allowed_structure_types.indexOf(type) !== -1) {
       structures.push(..._structures);
@@ -33,9 +33,7 @@ const StructureSlotComponent: React.FC<StructureSlotComponentProps> = ({
         </span>
         <ul style={{ paddingLeft: "30px", listStyle: "initial" }}>
           {structures.map((structure) => (
-            <li key={structure.structure_id}>
-              {structure.title}
-            </li>
+            <li key={structure.structure_id}>{structure.title}</li>
           ))}
         </ul>
       </span>

@@ -1,8 +1,5 @@
-// src/components/Screen.tsx
-
 import React, { useEffect } from "react";
 import EntityItem from "./EntityItem";
-import "./Screen.css";
 import useEntityStore from "../store/entityStore";
 
 interface ScreenProps {
@@ -23,7 +20,7 @@ const Screen: React.FC<ScreenProps> = ({ isLoggedIn, buildOnEntity }) => {
     switch (event.key) {
       case "ArrowUp":
         newY += 1;
-        event.preventDefault(); // Prevent default scrolling behavior
+        event.preventDefault();
         break;
       case "ArrowDown":
         newY -= 1;
@@ -64,25 +61,12 @@ const Screen: React.FC<ScreenProps> = ({ isLoggedIn, buildOnEntity }) => {
   }, [x, y, isLoggedIn]);
 
   return (
-    <div className="screen-container">
-      <div className="coordinates-display">
+    <div className="flex flex-col h-screen">
+      <div className="text-center p-2 text-lg font-bold bg-gray-100 border-b border-gray-300">
         Current Coordinates: ({x}, {y})
       </div>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          width: "100vw",
-          height: "100vh",
-        }}
-      >
-        <div
-          className="content"
-          style={{
-            padding: "20px",
-            backgroundColor: "#f0f0f0",
-          }}
-        >
+      <div className="flex flex-1 w-screen">
+        <div className="flex flex-1 justify-center items-start p-5 bg-gray-100">
           {entityStore.entity &&
             entityStore.entity.components &&
             entityStore.entity.components.length > 0 && (

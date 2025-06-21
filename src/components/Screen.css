@@ -1,0 +1,51 @@
+/* src/components/Screen.css */
+
+.screen-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.coordinates-display {
+  text-align: center;
+  padding: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  background-color: #f0f2f5;
+  border-bottom: 1px solid #ddd;
+}
+
+.loading {
+  text-align: center;
+  padding: 10px;
+  font-size: 16px;
+  color: #007bff;
+}
+
+.content {
+  display: flex;
+  flex: 1 0 25%;
+  justify-content: center;
+  align-items: start;
+
+}
+
+.primary-entities {
+  width: 25%;
+  background-color: #ffffff;
+  padding: 20px;
+  overflow-y: auto;
+  border-right: 1px solid #ddd;
+}
+
+.secondary-entities {
+  flex: 1;
+  background-color: #f8f9fb;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.divider {
+  width: 1px;
+  background-color: #ddd;
+}

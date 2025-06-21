@@ -1,0 +1,24 @@
+/* src/components/EntityItem.css */
+
+.entity-item {
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 4px;
+  width: 100%;
+  /* max width: min of 80vw and width 100% minus padding */
+  max-width: min(80vw, calc(100% - 20px));
+}
+
+.nested-entities {
+  margin-left: 20px;
+  padding-left: 10px;
+  border-left: 1px dashed #ccc;
+}
+
+.entity-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}

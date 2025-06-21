@@ -1,7 +1,6 @@
 // src/components/Screen.tsx
 
 import React, { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router";
 import EntityItem from "./EntityItem";
 import "./Screen.css";
 import useEntityStore from "../store/entityStore";
@@ -13,17 +12,8 @@ interface ScreenProps {
 
 const Screen: React.FC<ScreenProps> = ({ isLoggedIn, buildOnEntity }) => {
   const entityStore = useEntityStore();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-
-  // Get current x and y from URL parameters, default to 0
-  const x = parseInt(searchParams.get("x") || "0", 10);
-  const y = parseInt(searchParams.get("y") || "0", 10);
-
-  // Function to update coordinates and navigate
-  const updateCoordinates = (newX: number, newY: number) => {
-    navigate(`/?x=${newX}&y=${newY}`);
-  };
+  const [x, setX] = React.useState(0);
+  const [y, setY] = React.useState(0);
 
   // Handle keydown events for navigation
   const handleKeyDown = (event: KeyboardEvent) => {
@@ -51,7 +41,9 @@ const Screen: React.FC<ScreenProps> = ({ isLoggedIn, buildOnEntity }) => {
         return; // Do nothing for other keys
     }
 
-    updateCoordinates(newX, newY);
+    // Update coordinates
+    setX(newX);
+    setY(newY);
   };
 
   useEffect(() => {

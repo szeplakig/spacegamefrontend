@@ -1,5 +1,4 @@
 import React, { useEffect } from "react";
-import { Routes, Route } from "react-router";
 import { jwtDecode } from "jwt-decode";
 import Screen from "./components/Screen";
 import useUserStore from "./store/userStore";
@@ -277,14 +276,7 @@ const App: React.FC = () => {
           </span>,
         ]}
       </header>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <Screen isLoggedIn={!!userId} buildOnEntity={buildOnEntity} />
-          }
-        />
-      </Routes>
+      <Screen isLoggedIn={!!userId} buildOnEntity={buildOnEntity} />
 
       {modalState.modal !== noneModal && renderSelectedModal()}
     </>

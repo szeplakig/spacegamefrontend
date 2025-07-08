@@ -17,19 +17,12 @@ export interface ResourcesData {
 }
 
 interface ResourcesState {
-  resourcesData: ResourcesData;
+  resourcesData: ResourcesData | null;
   updateResources: () => void;
 }
 
 export const useResourcesStore = create<ResourcesState>((set) => ({
-  resourcesData: {
-    energy: { amount: 0, change: 0, capacity: null, updated_at: null },
-    minerals: { amount: 0, change: 0, capacity: null, updated_at: null },
-    alloys: { amount: 0, change: 0, capacity: null, updated_at: null },
-    antimatter: { amount: 0, change: 0, capacity: null, updated_at: null },
-    research: { amount: 0, change: 0, capacity: null, updated_at: null },
-    authority: { amount: 0, change: 0, capacity: null, updated_at: null },
-  },
+  resourcesData: null,
   updateResources: function () {
     // Optimistic update from localStorage (synchronous)
     const lastResourceResponse = localStorage.getItem("resources_response");

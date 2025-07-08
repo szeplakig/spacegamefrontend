@@ -6,6 +6,7 @@ import { useResearchStore } from "../store/researchStore";
 // @ts-ignore
 import CytoscapeComponent from "react-cytoscapejs";
 import Cytoscape from "cytoscape";
+// @ts-ignore
 import Dagre from "cytoscape-dagre";
 // @ts-ignore
 import Elk from "cytoscape-elk";
@@ -86,17 +87,18 @@ const ResearchModal: React.FC<ResearchModalProps> = ({ isOpen, onClose }) => {
   const dagreLayout = {
     name: "dagre",
     rankDir: "TB", // 'TB' for top to bottom flow, 'LR' for left to right,
+    align: "DL", // 'UL' for upper left, 'UR' for upper right, 'DL' for down left, 'DR' for down right
     nodeSep: 100, // the separation between adjacent nodes in the same rank
     edgeSep: 100, // the separation between adjacent edges in the same rank
     rankSep: 200, // the separation between each rank in the layout
-    ranker: "longest-path", // Type of algorithm to assign a rank to each node in the input graph. Possible values: 'network-simplex', 'tight-tree' or 'longest-path'
+    ranker: "network-simplex", // Type of algorithm to assign a rank to each node in the input graph. Possible values: 'network-simplex', 'tight-tree' or 'longest-path'
     acyclicer: "greedy", // If set to 'greedy', uses a greedy heuristic for finding a feedback arc set for a graph.
     spacingFactor: 1, // Applies a multiplicative factor (>0) to expand or compress the overall area that the nodes take up
     minLen: function (edge: any) {
       return 1;
     }, // number of ranks to keep between the source and target of the edge
     fit: true, // whether to fit to viewport
-    animate: true, // whether to transition the node positions
+    animate: false, // whether to transition the node positions
     animationDuration: 1000, // duration of animation in ms if enabled
     padding: 30, // fit padding
     nodeDimensionsIncludeLabels: true, // whether labels should be included in determining the space used by a node
@@ -143,6 +145,18 @@ const ResearchModal: React.FC<ResearchModalProps> = ({ isOpen, onClose }) => {
         {/* highlight autofilled text box autocomplete element by name (with fuzzy search) */}
       </div>
       <CytoscapeComponent
+        cy={(cy: any) => {
+          cy.on("click", "node", (evt: any) => {
+            if (!evt.target) {
+              return;
+            }
+            if (evt.target.id()[0] === "s") {
+              return;
+            }
+            
+            console.log("clicked " + evt.target);
+          });
+        }}
         layout={dagreLayout}
         elements={[...nodes, ...edges]}
         style={{ width: "100%", height: "100%" }}

@@ -25,6 +25,7 @@ function secondsToDhms(seconds: number) {
   var sDisplay = s > 0 ? s + (s === 1 ? " second" : " seconds") : "";
   return dDisplay + hDisplay + mDisplay + sDisplay;
 }
+
 const noneModal = 0;
 const loginModal = 1;
 const registerModal = 2;
@@ -124,7 +125,7 @@ const App: React.FC = () => {
           color: "#fff",
           position: "sticky",
           top: 0,
-          zIndex: 100,
+          zIndex: 0,
         }}
       >
         <div>

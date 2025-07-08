@@ -41,11 +41,16 @@ const Resources: React.FC = () => {
     useState<ResourcesData>(defaultResourcesData);
 
   useEffect(() => {
-    resourcesState.updateResources();
+    if (resourcesState.resourcesData === null) {
+      resourcesState.updateResources();
+    }
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    if (resourcesState.resourcesData === null) {
+      return;
+    }
+    function recalc() {
       setDisplayData({
         ...resourcesState.resourcesData,
         energy: {
@@ -85,7 +90,11 @@ const Resources: React.FC = () => {
           ),
         },
       });
+    }
+    const interval = setInterval(() => {
+      recalc();
     }, 1000);
+    recalc();
 
     return () => clearInterval(interval);
   }, [resourcesState]);

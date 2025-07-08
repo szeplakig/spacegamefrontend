@@ -1,43 +1,39 @@
-// src/components/EntityItem.tsx
+// src/components/EntitiesComponent.tsx
 
 import React from "react";
-import "./EntityItem.css";
-import type { EntitiesComponentData } from "../types/index";
+import type { EntitiesComponentData } from "../types";
 import EntityItem from "./EntityItem";
 
-interface EntititesComponentProps {
+interface EntitiesComponentProps {
   x: number;
   y: number;
   component: EntitiesComponentData;
   buildOnEntity: (x: number, y: number, entityId: string) => void;
 }
 
-const EntititesComponent: React.FC<EntititesComponentProps> = ({
+const EntitiesComponent: React.FC<EntitiesComponentProps> = ({
   component,
   x,
   y,
   buildOnEntity,
-}) => {
-  return (
-    <div style={{ marginBottom: "10px" }}>
-      <span>
-        <b>
-          {component.title} ({component.entities.length}):
-        </b>
-      </span>
-      <ul className="nested-entities">
-        {component.entities.map((subEntity) => (
-          <EntityItem
-            key={subEntity.entity_id}
-            entity={subEntity}
-            x={x}
-            y={y}
-            buildOnEntity={buildOnEntity}
-          />
-        ))}
-      </ul>
-    </div>
-  );
-};
+}) => (
+  <div className="mb-2">
+    <span className="font-bold">
+      {component.title} ({component.entities.length}):
+    </span>
 
-export default EntititesComponent;
+    <ul className="ml-5 pl-2 border-l border-dashed border-gray-300">
+      {component.entities.map((subEntity) => (
+        <EntityItem
+          key={subEntity.entity_id}
+          entity={subEntity}
+          x={x}
+          y={y}
+          buildOnEntity={buildOnEntity}
+        />
+      ))}
+    </ul>
+  </div>
+);
+
+export default EntitiesComponent;

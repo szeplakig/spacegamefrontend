@@ -1,7 +1,4 @@
-// src/components/EntityItem.tsx
-
 import React, { useEffect, useState } from "react";
-import "./EntityItem.css";
 import type { Entity } from "../types";
 import {
   isResourceComponentData,
@@ -70,7 +67,7 @@ const EntityItem: React.FC<EntityItemProps> = ({
       antimatter: 0,
       research: 0,
       authority: 0,
-    };
+    } as ResourceSlotUsage;
 
     const nextStructureTypes: { [key: string]: BuiltStructure[] } = {};
     for (const structure of structures.built_structures) {
@@ -100,69 +97,62 @@ const EntityItem: React.FC<EntityItemProps> = ({
     setStructureTypes(nextStructureTypes);
   }, [structures, strucutresStore]);
 
-  const renderComponents = (components: Entity["components"]) => {
-    return (
-      <ul>
-        {components.map((component, i) => (
-          <li key={component.title}>
-            {isResourceComponentData(component) && component.value > 0 && (
-              <ResourceComponent
+  const renderComponents = (components: Entity["components"]) => (
+    <ul className="ml-5 pl-2 border-l border-dashed border-gray-300">
+      {components.map((component) => (
+        <li key={component.title} className="mb-1">
+          {isResourceComponentData(component) && component.value > 0 && (
+            <ResourceComponent
+              component={component}
+              resourceSlotUsage={resourceSlotUsage}
+              structureTypes={structureTypes}
+            />
+          )}
+          {isEntitiesComponentData(component) &&
+            component.entities &&
+            component.entities.length > 0 && (
+              <EntititesComponent
                 component={component}
-                resourceSlotUsage={resourceSlotUsage}
-                structureTypes={structureTypes}
+                x={x}
+                y={y}
+                buildOnEntity={buildOnEntity}
               />
             )}
-            {isEntitiesComponentData(component) &&
-              component.entities &&
-              component.entities.length > 0 && (
-                <EntititesComponent
-                  component={component}
-                  x={x}
-                  y={y}
-                  buildOnEntity={buildOnEntity}
-                />
-              )}
-            {isStructureSlotComponentData(component) && (
-              <StructureSlotComponent
-                component={component}
-                structureTypes={structureTypes}
-              />
-            )}
-          </li>
-        ))}
-      </ul>
-    );
-  };
+          {isStructureSlotComponentData(component) && (
+            <StructureSlotComponent
+              component={component}
+              structureTypes={structureTypes}
+            />
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+
+  const hasStructuresLoaded = Boolean(
+    strucutresStore.getStructures(x, y, entity.entity_id)
+  );
 
   return (
-    <div className="entity-item">
-      <p
-        className="entity-title"
-        style={{
-          display: "inline-block",
-          fontWeight: "bold",
-          fontSize: "1.2rem",
-          marginBottom: "10px",
-        }}
-      >
-        {entity.title}
-      </p>
-      {strucutresStore.getStructures(x, y, entity.entity_id) && (
-        <button
-          onClick={() => buildOnEntity(x, y, entity.entity_id)}
-          style={{
-            display: "inline-block",
-            float: "right",
-            padding: "0.5rem",
-            textAlign: "center",
-            fontWeight: "bold",
-            fontSize: "1.5rem",
-            cursor: "pointer",
-          }}
-        >
-          🛠
-        </button>
-      )}
+    <div className="border border-gray-300 mb-2 p-2 rounded w-full max-w-[80vw]">
+      <div className="flex justify-between items-start mb-2">
+        <p className="text-xl font-bold text-gray-800">{entity.title}</p>
+        {hasStructuresLoaded && (
+          <button
+            onClick={() => buildOnEntity(x, y, entity.entity_id)}
+            className={`p-2 text-center font-bold text-2xl cursor-pointer hover:bg-gray-200 rounded ${
+              strucutresStore.getStructures(x, y, entity.entity_id)
+                .built_structures.length > 0 ||
+              strucutresStore.getStructures(x, y, entity.entity_id)
+                .structure_templates.length > 0
+                ? ""
+                : "opacity-50"
+            }`}
+          >
+            🛠
+          </button>
+        )}
+      </div>
       {entity.components &&
         entity.components.length > 0 &&
         renderComponents(entity.components)}

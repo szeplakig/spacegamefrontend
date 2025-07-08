@@ -1,8 +1,11 @@
+// src/components/BuildModal.tsx
+
 import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
 import { useResourcesStore } from "../store/resourcesStore";
 import useBuildStore from "../store/buildStore";
 import useStructureStore from "../store/structureStore";
+import Resources from "./Resources";
 
 interface BuildModalProps {
   isOpen: boolean;
@@ -10,18 +13,26 @@ interface BuildModalProps {
 }
 
 const BuildModal: React.FC<BuildModalProps> = ({ isOpen, onClose }) => {
-  const strucutresStore = useStructureStore();
+  /* --------------------------------------------------------------------
+   * Stores & State
+   * ------------------------------------------------------------------*/
+  const structureStore = useStructureStore();
   const buildStore = useBuildStore();
+  const resourcesState = useResourcesStore();
+
   const structures = useStructureStore((state) =>
     state.getStructures(buildStore.x, buildStore.y, buildStore.entityId)
   );
-  const resourcesState = useResourcesStore();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /* --------------------------------------------------------------------
+   * Effects
+   * ------------------------------------------------------------------*/
   useEffect(() => {
     if (isOpen) {
-      strucutresStore.loadStructures(
+      structureStore.loadStructures(
         buildStore.x,
         buildStore.y,
         buildStore.entityId
@@ -29,271 +40,258 @@ const BuildModal: React.FC<BuildModalProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen, buildStore]);
 
-  const handleBuild = (structure_type: string) => {
-    fetch(
-      `http://localhost:8000/v1/entity/${buildStore.entityId}/structures/${structure_type}?x=${buildStore.x}&y=${buildStore.y}`,
-      {
-        method: "POST",
-        credentials: "include",
-      }
-    )
-      .then((response) => {
-        if (!response.ok) {
-          return response.json().then((res) => {
-            throw new Error("Failed to build: " + res.detail);
-          });
+  /* --------------------------------------------------------------------
+   * Helpers
+   * ------------------------------------------------------------------*/
+  const handleRequest = (url: string, method: "POST" | "PUT" | "DELETE") => {
+    setLoading(true);
+    fetch(url, { method, credentials: "include" })
+      .then(async (res) => {
+        if (!res.ok) {
+          const body = await res.json();
+          throw new Error(body.detail ?? "Request failed");
         }
-        strucutresStore.loadStructures(
+        return res.json();
+      })
+      .then(() => {
+        structureStore.loadStructures(
           buildStore.x,
           buildStore.y,
           buildStore.entityId
         );
-        strucutresStore.reloadEntityStructures(buildStore.entityId);
+        structureStore.reloadEntityStructures(buildStore.entityId);
         resourcesState.updateResources();
-        return response.json();
       })
-      .catch((error) => setError(error.message));
-  };
-
-  const handleUpgrade = (structure_id: string) => {
-    fetch(
-      `http://localhost:8000/v1/entity/${buildStore.entityId}/structures/${structure_id}?x=${buildStore.x}&y=${buildStore.y}`,
-      {
-        method: "PUT",
-        credentials: "include",
-      }
-    )
-      .then((response) => {
-        if (!response.ok) {
-          return response.json().then((res) => {
-            throw new Error("Failed to upgrade: " + res.detail);
-          });
-        }
-
-        strucutresStore.loadStructures(
-          buildStore.x,
-          buildStore.y,
-          buildStore.entityId
-        );
-        strucutresStore.reloadEntityStructures(buildStore.entityId);
-        resourcesState.updateResources();
-        return response.json();
-      })
-      .catch((error) => setError(error.message));
-  };
-
-  const handleDestroy = (structure_id: string) => {
-    fetch(`http://localhost:8000/v1/structures/${structure_id}`, {
-      method: "DELETE",
-      credentials: "include",
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to destroy");
-        }
-        strucutresStore.loadStructures(
-          buildStore.x,
-          buildStore.y,
-          buildStore.entityId
-        );
-        resourcesState.updateResources();
-        return response.json();
-      })
-      .catch((error) => setError(error.message))
+      .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
   };
 
+  const handleBuild = (structureType: string) =>
+    handleRequest(
+      `http://localhost:8000/v1/entity/${buildStore.entityId}/structures/${structureType}?x=${buildStore.x}&y=${buildStore.y}`,
+      "POST"
+    );
+
+  const handleUpgrade = (structureId: string) =>
+    handleRequest(
+      `http://localhost:8000/v1/entity/${buildStore.entityId}/structures/${structureId}?x=${buildStore.x}&y=${buildStore.y}`,
+      "PUT"
+    );
+
+  const handleDestroy = (structureId: string) =>
+    handleRequest(
+      `http://localhost:8000/v1/structures/${structureId}`,
+      "DELETE"
+    );
+
+  /* --------------------------------------------------------------------
+   * Render helpers
+   * ------------------------------------------------------------------*/
+  const Card = ({ children }: { children: React.ReactNode }) => (
+    <div className="bg-white border border-gray-300 rounded-lg p-4 flex flex-col h-full shadow-sm hover:shadow-md transition-shadow duration-200">
+      {children}
+    </div>
+  );
+
+  const ProductionList = ({
+    production,
+  }: {
+    production: (typeof structures.structure_templates)[number]["production_components"];
+  }) =>
+    production.length > 0 ? (
+      <div className="space-y-1 mb-3">
+        <p className="font-semibold text-gray-700">Production:</p>
+        <ul className="list-disc ml-5 text-sm space-y-1">
+          {production.map((c, idx) => (
+            <li key={idx}>
+              {c.title}
+              {c.type === "resource_production" && (
+                <>
+                  : {c.value} (uses {c.slot_usage} slots)
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : null;
+
+  const RequirementList = ({
+    requirements,
+    title,
+  }: {
+    requirements: (typeof structures.structure_templates)[number]["requirement_components"];
+    title: string;
+  }) =>
+    requirements.length > 0 ? (
+      <div className="space-y-1 mb-3">
+        <p className="font-semibold text-gray-700">{title}:</p>
+        <ul className="list-disc ml-5 text-sm space-y-1">
+          {requirements.map((c, idx) => (
+            <li key={idx}>
+              {c.title}
+              {c.type === "resource_requirement" && <>: {c.value}</>}
+            </li>
+          ))}
+        </ul>
+      </div>
+    ) : null;
+
+  /* --------------------------------------------------------------------
+   * JSX
+   * ------------------------------------------------------------------*/
   return (
     <Modal
       isOpen={isOpen}
       onRequestClose={onClose}
       contentLabel="Build Modal"
-      ariaHideApp={false}
-      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11/12 max-w-3xl bg-white p-4 rounded-lg max-h-[90vh] shadow-lg outline-none"
-      overlayClassName="fixed inset-0 bg-black bg-opacity-50 z-[1000]"
+      ariaHideApp={true}
+      shouldCloseOnOverlayClick={false}
+      className="relative w-11/12 max-w-6xl bg-white p-6 rounded-lg max-h-[90vh] shadow-lg overflow-y-auto outline-none"
+      overlayClassName="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
     >
+      {/* Close Button */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-6 bg-transparent border-0 text-3xl cursor-pointer text-gray-400 hover:text-black"
+        className="absolute top-4 right-6 text-3xl text-gray-400 hover:text-black"
+        aria-label="Close"
       >
         &times;
       </button>
-      <h2 className="mb-5 text-center text-2xl text-gray-800">
+
+      {/* Resources summary */}
+      <Resources />
+
+      {/* Title */}
+      <h2 className="mb-6 text-center text-2xl font-semibold text-gray-800">
         Build Structures on ({buildStore.x}, {buildStore.y})
       </h2>
-      {loading && <p className="text-center font-bold text-red-600">Loading...</p>}
-      {error && <p className="text-center font-bold text-red-600">{error}</p>}
+
+      {/* Loading / Error */}
+      {loading && (
+        <p className="text-center font-bold text-orange-600 mb-4">Loading...</p>
+      )}
+      {error && (
+        <p className="text-center font-bold text-red-600 mb-4">{error}</p>
+      )}
+
+      {/* Sections */}
       {structures && (
-        <div className="flex flex-col gap-8">
-          <div className="structures-section">
-            <h3 className="text-blue-500 border-b-2 border-blue-500 pb-1">
+        <div className="flex flex-col gap-12">
+          {/* Built Structures */}
+          <section className="space-y-6">
+            <h3 className="text-lg font-semibold text-blue-600 border-b pb-1 border-blue-600">
               Built Structures
             </h3>
+
             {structures.built_structures.length > 0 ? (
-              <div className="grid gap-5 justify-center grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {structures.built_structures.map((structure) => (
-                  <div
-                    className="bg-white border border-gray-300 rounded-lg p-4 flex flex-col relative"
-                    key={structure.structure_id}
-                  >
-                    <h4 className="text-gray-800 text-lg font-semibold">
+                  <Card key={structure.structure_id}>
+                    {/* Title */}
+                    <h4 className="text-lg font-semibold text-gray-800 mb-1">
                       {structure.title}
                     </h4>
-                    <p>{structure.description}</p>
-                    {structure.production_components.length > 0 && (
-                      <>
-                        <p className="font-bold mb-1 text-gray-600">
-                          Production:
-                        </p>
-                        <ul className="list-disc ml-4 mb-2">
-                          {structure.production_components.map(
-                            (component, index) =>
-                              component.type === "resource_production" ? (
-                                <li className="mb-1 text-gray-700" key={index}>
-                                  {component.title}: {component.value} ( Uses{" "}
-                                  {component.slot_usage} slots)
-                                </li>
-                              ) : (
-                                <li className="mb-1 text-gray-700" key={index}>
-                                  {component.title}
-                                </li>
-                              )
-                          )}
-                        </ul>
-                      </>
-                    )}
-                    {structure.requirement_components.length > 0 && (
-                      <>
-                        <p className="font-bold mb-1 text-gray-600">
-                          Upgrade Requirements:
-                        </p>
-                        <ul className="list-disc ml-4 mb-2">
-                          {structure.requirement_components.map(
-                            (component, index) =>
-                              component.type === "resource_requirement" ? (
-                                <li className="mb-1 text-gray-700" key={index}>
-                                  {component.title}: {component.value}
-                                </li>
-                              ) : (
-                                <li className="mb-1 text-gray-700" key={index}>
-                                  {component.title}
-                                </li>
-                              )
-                          )}
-                        </ul>
-                      </>
-                    )}
-                    <div className="flex justify-end w-full gap-4 absolute bottom-4 right-6">
+                    {/* Description */}
+                    <p className="text-gray-700 text-sm mb-3">
+                      {structure.description}
+                    </p>
+
+                    {/* Production */}
+                    <ProductionList
+                      production={structure.production_components}
+                    />
+
+                    {/* Requirements */}
+                    <RequirementList
+                      requirements={structure.requirement_components}
+                      title="Upgrade Requirements"
+                    />
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 mt-auto self-end">
                       <button
                         onClick={() => handleUpgrade(structure.structure_id)}
-                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded mt-auto"
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
                       >
                         Upgrade
                       </button>
                       <button
                         onClick={() => handleDestroy(structure.structure_id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded mt-auto"
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
                       >
                         Destroy
                       </button>
                     </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
             ) : (
               <p className="text-gray-500 italic">No structures built yet.</p>
             )}
-          </div>
+          </section>
 
-          <div className="structures-section">
-            <h3 className="text-blue-500 border-b-2 border-blue-500 pb-1">
+          {/* Buildable Structures */}
+          <section className="space-y-6">
+            <h3 className="text-lg font-semibold text-blue-600 border-b pb-1 border-blue-600">
               Buildable Structures
             </h3>
+
             {structures.structure_templates.length > 0 ? (
-              <div className="grid gap-5 justify-center grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                {structures.structure_templates.map((structure_template) => (
-                  <div
-                    className="bg-white border border-gray-300 rounded-lg p-4 flex flex-col relative"
-                    key={structure_template.structure_type}
-                  >
-                    <h4 className="text-gray-800 text-lg font-semibold">
-                      {structure_template.title}
+              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {structures.structure_templates.map((template) => (
+                  <Card key={template.structure_type}>
+                    {/* Title */}
+                    <h4 className="text-lg font-semibold text-gray-800 mb-1">
+                      {template.title}
                     </h4>
-                    <span>{structure_template.description}</span>
-                    {structure_template.production_components.length > 0 && (
-                      <>
-                        <p className="font-bold mb-1 text-gray-600">
-                          Production:
-                        </p>
-                        <ul className="list-disc ml-4 mb-2">
-                          {structure_template.production_components.map(
-                            (component, index) =>
-                              component.type === "resource_production" ? (
-                                <li className="mb-1 text-gray-700" key={index}>
-                                  {component.title}: {component.value} ( Uses{" "}
-                                  {component.slot_usage} slots)
-                                </li>
-                              ) : (
-                                <li className="mb-1 text-gray-700" key={index}>
-                                  {component.title}
-                                </li>
-                              )
-                          )}
-                        </ul>
-                      </>
-                    )}
-                    {structure_template.requirement_components.length > 0 && (
-                      <>
-                        <p className="font-bold mb-1 text-gray-600">
-                          Build Requirements:
-                        </p>
-                        <ul className="list-disc ml-4 mb-2">
-                          {structure_template.requirement_components.map(
-                            (component, index) =>
-                              component.type === "resource_requirement" ? (
-                                <li className="mb-1 text-gray-700" key={index}>
-                                  {component.title}: {component.value}
-                                </li>
-                              ) : (
-                                <li className="mb-1 text-gray-700" key={index}>
-                                  {component.title}
-                                </li>
-                              )
-                          )}
-                        </ul>
-                      </>
-                    )}
+                    {/* Description */}
+                    <p className="text-gray-700 text-sm mb-3">
+                      {template.description}
+                    </p>
+
+                    {/* Production */}
+                    <ProductionList
+                      production={template.production_components}
+                    />
+
+                    {/* Requirements */}
+                    <RequirementList
+                      requirements={template.requirement_components}
+                      title="Build Requirements"
+                    />
+
+                    {/* Build Button */}
                     <button
-                      className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded mt-auto self-end"
-                      onClick={() =>
-                        handleBuild(structure_template.structure_type)
-                      }
+                      onClick={() => handleBuild(template.structure_type)}
+                      className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md text-sm self-end mt-auto focus:outline-none focus:ring-2 focus:ring-green-400"
                     >
                       Build
                     </button>
-                  </div>
+                  </Card>
                 ))}
               </div>
             ) : (
               <p className="text-gray-500 italic">No buildable structures.</p>
             )}
-          </div>
+          </section>
 
-          <div className="structures-section">
-            <h3 className="text-blue-500 border-b-2 border-blue-500 pb-1">
-              Debug: Unbuildable structures
-            </h3>
-            <ul className="list-disc ml-4">
-              {structures &&
-                structures.other_templates &&
-                Object.entries(structures.other_templates).map(([k, v]) => (
-                  <li className="mb-1 text-gray-700" key={k}>
-                    {k}: {v}
-                    <br />
-                  </li>
-                ))}
-            </ul>
-          </div>
+          {/* Debug */}
+          {Object.keys(structures.other_templates).length > 0 && (
+            <section className="space-y-3">
+              <h3 className="text-lg font-semibold text-blue-600 border-b pb-1 border-blue-600">
+                Debug: Unbuildable Structures
+              </h3>
+              <ul className="list-disc ml-5 space-y-1 text-sm">
+                {structures.other_templates &&
+                  Object.entries(structures.other_templates).map(([k, v]) => (
+                    <li key={k} className="text-gray-700">
+                      {k}: {v}
+                    </li>
+                  ))}
+              </ul>
+            </section>
+          )}
         </div>
       )}
     </Modal>
